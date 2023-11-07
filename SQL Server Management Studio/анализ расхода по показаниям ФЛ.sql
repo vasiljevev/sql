@@ -1,6 +1,6 @@
 
 /*
- --ДЛЯ ФЛ и ЮЛ
+ --ДЛЯ ФЛ
 update emr
 set 
 F_Readings_Status_Orig = emr.F_Readings_Status,
@@ -9,20 +9,16 @@ F_Readings_Status = case when emr.F_Readings_Status = 0 then 4
 						else emr.F_Readings_Status	
 						end
 ,C_Notes = emr.C_Notes + '#Изменен статус в связи с перекрутом'
---select *
 from ED_Meter_Readings emr
 inner join #t t
 	on t.LINK_MR = emr.LINK
 where abs(t.N_CONS_TOTAL) > abs((t.N_Value-t.N_VALUE_PREV)*t.N_RATE)	
 
 drop table #t
-select * from #t where #t.C_Serial_Number='23896627'
+select * from #t where #t.C_serial_Number='011506101735675'
  order by #t.ЛС
 
 */
-
---delete from pe.FD_Charges where N_Period = 202109
---select * from SD_Divisions
 
 declare
 	@F_Division		INT,
@@ -31,16 +27,16 @@ declare
 	@D_Date0		SMALLDATETIME	= NULL,
 	@D_Date1		SMALLDATETIME	= NULL,
 	@N_Cons			INT					  ,
-	@B_EE			BIT				= 1
+	@B_EE			BIT				= 0		
 --with recompile	
 
 select 
-	 @F_Division = 61
+	 @F_Division = 31
 	,@F_Subscr = null --70970741,--28959321,
-	,@D_Date0 = '20220302'--dateadd(YEAR,-14,GETDATE())
-	,@D_Date1 = '20220501'--GETDATE()
+	,@D_Date0 = '20210602'--dateadd(YEAR,-14,GETDATE())
+	,@D_Date1 = '20210701'--GETDATE()
 	,@N_Cons = 5000
-	,@B_EE = 1
+	,@B_EE = 0
 
 IF @F_Division IS NULL
 	AND @F_Subscr IS NULL
@@ -92,7 +88,7 @@ SELECT --top 100
 	dbo.CF_Get_C_CodeName(TZ.N_Code, TZ.C_Name)									AS C_TIME_ZONES,
 	dbo.CF_Get_C_CodeName(DM.N_Code, DM.C_Name)									AS C_DELIVERY_METHODS,
 	MR_CR.D_Date ,
-	MR_CR.D_Date_Real,		--	Реальная дата показания, заполянется для показаний импортируемых
+	--MR_CR.D_Date_Real,		--	Реальная дата показания, заполянется для показаний импортируемых
 	MR_CR.N_Value ,
 	MR_CR.N_Cons ,
 	MR_CR.C_Notes ,
@@ -281,10 +277,10 @@ AND ((MR_CR.N_Value < MR_PR.N_Value AND MR_CR.F_Readings_Status = 0)
 
 		
 select *
-,N_Value [Текущее показание]
-,N_VALUE_PREV [Предыдущее показание]
-,t.N_CONS_TOTAL [расход до реверса]
-,(t.N_Value-t.N_VALUE_PREV)*N_RATE [расход после реверса]
+,N_Value
+,N_VALUE_PREV
+,t.N_CONS_TOTAL
+,(t.N_Value-t.N_VALUE_PREV)*N_RATE
  from #t t
  where abs(t.N_CONS_TOTAL) > abs((t.N_Value-t.N_VALUE_PREV)*N_RATE)	
 
@@ -301,7 +297,7 @@ SET F_Readings_Status = 2,
 	FROM ED_Meter_Readings EMR
 	INNER JOIN ED_Devices_Pts EDP
 		ON  EMR.F_Devices = EDP.F_Devices
-		AND EMR.F_Division = 31 BETWEEN 5 AND 10
+		AND EMR.F_Division BETWEEN 5 AND 10
 	INNER JOIN ED_Registr_Pts ERP
 		ON  ERP.LINK = EDP.F_Registr_Pts
 		AND ERP.F_Sale_Category = 1 -- FL
